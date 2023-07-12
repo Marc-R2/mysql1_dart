@@ -1,16 +1,14 @@
-library mysql1.test.one_test;
+import 'dart:typed_data';
 
 import 'package:mysql1/mysql1.dart';
 import 'package:test/test.dart';
 
 import '../test_infrastructure.dart';
 
-import 'dart:typed_data';
-
-final dt = DateTime.utc(2018, 01, 01, 7, 0);
+final dt = DateTime.utc(2018, 01, 01, 7);
 
 List<Object>? get insertValues {
-  var values = <Object>[];
+  final values = <Object>[];
   values.add(126);
   values.add(164);
   values.add(165);
@@ -51,8 +49,8 @@ List<Object>? get insertValues {
   return values;
 }
 
-List get responseValues {
-  var values = <Object?>[];
+List<Object?> get responseValues {
+  final values = <Object?>[];
   values.add(126);
   values.add(164);
   values.add(165);
@@ -68,13 +66,20 @@ List get responseValues {
   values.add(0x010203); //[1, 2, 3]);
   values.add(123);
 
-  values.add(DateTime.utc(
-      dt.year, dt.month, dt.day)); // date has zero'd out time value
+  values.add(
+    DateTime.utc(
+      dt.year,
+      dt.month,
+      dt.day,
+    ),
+  ); // date has zero'd out time value
   // Datetime has no millis
   values.add(
-      DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second));
+    DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second),
+  );
   values.add(
-      DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second));
+    DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second),
+  );
   values.add(Duration(hours: dt.hour, minutes: dt.minute, seconds: dt.second));
   values.add(2012);
 
@@ -183,15 +188,15 @@ void main() {
           'aenum enum("a", "b", "c"), aset set("a", "b", "c"), ageometry geometry)');
 
   test('show tables', () async {
-    var results = await conn.query('show tables');
+    final results = await conn.query('show tables');
     expect(results.isNotEmpty, true);
-    for (var r in results) {
+    for (final r in results) {
       print(r);
     }
   });
 
   test('describe stuff', () async {
-    var results = await conn.query('describe test1');
+    final results = await conn.query('describe test1');
     print('table test1');
     _showResults(results);
   });
@@ -202,7 +207,9 @@ void main() {
       longstring += 'x';
     }
     var results = await conn.query(
-        'insert into test1 (atext) values (?)', [Blob.fromString(longstring)]);
+      'insert into test1 (atext) values (?)',
+      [Blob.fromString(longstring)],
+    );
     expect(results.affectedRows, equals(1));
 
     results = await conn.query('select atext from test1');
@@ -215,8 +222,10 @@ void main() {
     for (var i = 0; i < 2000; i++) {
       longstring += 'x';
     }
-    var query = await conn.query(
-        'insert into test1 (atext) values (?)', [Blob.fromString(longstring)]);
+    final query = await conn.query(
+      'insert into test1 (atext) values (?)',
+      [Blob.fromString(longstring)],
+    );
     expect(query.affectedRows, equals(1));
 
     var results = await conn.query('select atext from test1');
@@ -232,59 +241,63 @@ void main() {
 
   test('insert stuff', () async {
     var results = await conn.query(
-        'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
-        'adecimal, afloat, adouble, areal, '
-        'aboolean, abit, aserial, '
-        'adate, adatetime, atimestamp, atime, ayear, '
-        'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
-        'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
-        'aenum, aset) values'
-        '(?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, '
-        '?, ?, ?, '
-        '?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?)',
-        insertValues);
+      'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
+      'adecimal, afloat, adouble, areal, '
+      'aboolean, abit, aserial, '
+      'adate, adatetime, atimestamp, atime, ayear, '
+      'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
+      'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
+      'aenum, aset) values'
+      '(?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, '
+      '?, ?, ?, '
+      '?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?)',
+      insertValues,
+    );
 
     expect(results.affectedRows, equals(1));
 
-    await conn.query('update test1 set atinyint = ?, adecimal = ?',
-        [127, '123456789.987654321']);
+    await conn.query(
+      'update test1 set atinyint = ?, adecimal = ?',
+      [127, '123456789.987654321'],
+    );
 
     results = await conn.query('select atinyint, adecimal from test1');
-    var list = results.toList();
-    var row = list[0];
+    final list = results.toList();
+    final row = list[0];
     expect(row[0], equals(127));
     expect(row[1], equals(123456789.987654321));
   });
 
   test('data types (query)', () async {
     await conn.query(
-        'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
-        'adecimal, afloat, adouble, areal, '
-        'aboolean, abit, aserial, '
-        'adate, adatetime, atimestamp, atime, ayear, '
-        'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
-        'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
-        'aenum, aset) values'
-        '(?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, '
-        '?, ?, ?, '
-        '?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?)',
-        insertValues);
+      'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
+      'adecimal, afloat, adouble, areal, '
+      'aboolean, abit, aserial, '
+      'adate, adatetime, atimestamp, atime, ayear, '
+      'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
+      'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
+      'aenum, aset) values'
+      '(?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, '
+      '?, ?, ?, '
+      '?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?)',
+      insertValues,
+    );
 
-    var results = await conn.query('select * from test1');
-    var list = results.toList();
-    var row = list[0];
+    final results = await conn.query('select * from test1');
+    final list = results.toList();
+    final row = list[0];
 
     for (var i = 0; i < results.fields.length; i++) {
       print('i: $i');
-      var field = results.fields[i];
+      final field = results.fields[i];
       // field types
       expect(field.typeString, fieldTypes[i]);
       // make sure results types are the same
@@ -301,32 +314,33 @@ void main() {
 
   test('multi queries', () async {
     await conn.transaction((ctx) async {
-      var params = <List<int>>[];
+      final params = <List<int>>[];
 
       for (var i = 0; i < 50; i++) {
         params.add([i]);
       }
-      var resultList =
+      final resultList =
           await ctx.queryMulti('insert into test1 (aint) values (?)', params);
       expect(resultList.length, equals(50));
     });
   });
 
   test('blobs in prepared queries', () async {
-    var abc = Blob.fromBytes([65, 66, 67, 0, 68, 69, 70]);
+    final abc = Blob.fromBytes([65, 66, 67, 0, 68, 69, 70]);
     var results = await conn
         .query('insert into test1 (aint, atext) values (?, ?)', [12344, abc]);
     results =
         await conn.query('select atext from test1 where aint = 12344', []);
-    var list = results.toList();
+    final list = results.toList();
     expect(list.length, equals(1));
-    var values = list[0];
+    final values = list[0];
     expect(values[0].toString(), equals('ABC\u0000DEF'));
   });
 
   test('blobs with nulls', () async {
     await conn.query(
-        'insert into test1 (aint, atext) values (12345, \'ABC\u0000DEF\')');
+      "insert into test1 (aint, atext) values (12345, 'ABC\u0000DEF')",
+    );
     var results =
         (await conn.query('select atext from test1 where aint = 12345'))
             .toList();
@@ -335,7 +349,7 @@ void main() {
     expect(v[0].toString(), equals('ABC\u0000DEF'));
 
     await conn.query('delete from test1 where aint = 12345');
-    var abc = String.fromCharCodes([65, 66, 67, 0, 68, 69, 70]);
+    final abc = String.fromCharCodes([65, 66, 67, 0, 68, 69, 70]);
     await conn
         .query('insert into test1 (aint, atext) values (?, ?)', [12345, abc]);
     results =
@@ -348,31 +362,32 @@ void main() {
 
   test('datetimes are de-serialized in UTC', () async {
     var results = await conn.query(
-        'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
-        'adecimal, afloat, adouble, areal, '
-        'aboolean, abit, aserial, '
-        'adate, adatetime, atimestamp, atime, ayear, '
-        'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
-        'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
-        'aenum, aset) values'
-        '(?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, '
-        '?, ?, ?, '
-        '?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?)',
-        insertValues);
+      'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
+      'adecimal, afloat, adouble, areal, '
+      'aboolean, abit, aserial, '
+      'adate, adatetime, atimestamp, atime, ayear, '
+      'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
+      'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
+      'aenum, aset) values'
+      '(?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, '
+      '?, ?, ?, '
+      '?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?)',
+      insertValues,
+    );
     results = await conn.query('select adatetime from test1');
 
     // Normal
-    var dt = results.first[0] as DateTime;
+    final dt = results.first[0] as DateTime;
     expect(dt.isUtc, isTrue);
 
     // Binary packet
     results = await conn
         .query('select adatetime from test1 WHERE atinyint = ?', [126]);
-    var dt2 = results.first[0] as DateTime;
+    final dt2 = results.first[0] as DateTime;
     expect(dt2.isUtc, isTrue);
 
     expect(dt, equals(dt2));
@@ -380,34 +395,35 @@ void main() {
 
   test('result fields are accessible by name', () async {
     var results = await conn.query(
-        'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
-        'adecimal, afloat, adouble, areal, '
-        'aboolean, abit, aserial, '
-        'adate, adatetime, atimestamp, atime, ayear, '
-        'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
-        'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
-        'aenum, aset) values'
-        '(?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, '
-        '?, ?, ?, '
-        '?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?, ?, ?, ?, ?, '
-        '?, ?)',
-        insertValues);
+      'insert into test1 (atinyint, asmallint, amediumint, abigint, aint, '
+      'adecimal, afloat, adouble, areal, '
+      'aboolean, abit, aserial, '
+      'adate, adatetime, atimestamp, atime, ayear, '
+      'achar, avarchar, atinytext, atext, amediumtext, alongtext, '
+      'abinary, avarbinary, atinyblob, amediumblob, ablob, alongblob, '
+      'aenum, aset) values'
+      '(?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, '
+      '?, ?, ?, '
+      '?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?, ?, ?, ?, ?, '
+      '?, ?)',
+      insertValues,
+    );
 
     // Normal
     results = await conn.query('select atinyint from test1');
-    var v1 = results.first.fields['atinyint'] as int;
-    var v2 = results.first['atinyint'] as int;
+    final v1 = results.first.fields['atinyint'] as int;
+    final v2 = results.first['atinyint'] as int;
     expect(v1, isNotNull);
     expect(v2, equals(v1));
 
     // Binary packet
     results =
         await conn.query('select atinyint from test1 WHERE ? = ?', [1, 1]);
-    var v3 = results.first.fields['atinyint'] as int;
-    var v4 = results.first['atinyint'] as int;
+    final v3 = results.first.fields['atinyint'] as int;
+    final v4 = results.first['atinyint'] as int;
     expect(v3, isNotNull);
     expect(v4, equals(v3));
 
@@ -415,23 +431,28 @@ void main() {
   });
 
   test('disallow non-utc datetime serialization', () async {
-    expect(() async {
-      var results = await conn
-          .query('insert into test1 (adatetime) values (?)', [DateTime.now()]);
-      results = await conn.query('select adatetime from test1');
-      var dt = results.first[0] as DateTime;
-      expect(dt.isUtc, isTrue);
-    }, throwsA(TypeMatcher<MySqlClientError>()));
+    expect(
+      () async {
+        var results = await conn.query(
+          'insert into test1 (adatetime) values (?)',
+          [DateTime.now()],
+        );
+        results = await conn.query('select adatetime from test1');
+        final dt = results.first[0] as DateTime;
+        expect(dt.isUtc, isTrue);
+      },
+      throwsA(const TypeMatcher<MySqlClientError>()),
+    );
   });
 }
 
 void _showResults(Results results) {
-  var fieldNames = <String>[];
-  for (var field in results.fields) {
+  final fieldNames = <String>[];
+  for (final field in results.fields) {
     fieldNames.add('${field.name}:${field.type}');
   }
   print(fieldNames);
-  for (var row in results) {
+  for (final row in results) {
     print(row);
   }
 }

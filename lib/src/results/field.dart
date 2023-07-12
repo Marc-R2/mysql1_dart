@@ -1,8 +1,66 @@
-library mysql1.field;
-
-import '../buffer.dart';
+import 'package:mysql1/src/buffer.dart';
 
 class Field {
+  factory Field(Buffer buffer) {
+    final catalog = buffer.readLengthCodedString();
+    final db = buffer.readLengthCodedString();
+    final table = buffer.readLengthCodedString();
+    final orgTable = buffer.readLengthCodedString();
+    final name = buffer.readLengthCodedString();
+    final orgName = buffer.readLengthCodedString();
+    buffer.skip(1);
+    final characterSet = buffer.readUint16();
+    final length = buffer.readUint32();
+    final type = buffer.readByte();
+    final flags = buffer.readUint16();
+    final decimals = buffer.readByte();
+    buffer.skip(2);
+    int? defaultValue;
+    if (buffer.canReadMore()) {
+      defaultValue = buffer.readLengthCodedBinary();
+    }
+    return Field._internal(
+      catalog,
+      db,
+      table,
+      orgTable,
+      name,
+      orgName,
+      characterSet,
+      length,
+      type,
+      flags,
+      decimals,
+      defaultValue,
+    );
+  }
+
+  Field._internal(
+    this.catalog,
+    this.db,
+    this.table,
+    this.orgTable,
+    this.name,
+    this.orgName,
+    this.characterSet,
+    this.length,
+    this.type,
+    this.flags,
+    this.decimals,
+    this.defaultValue,
+  );
+  Field.forTests(this.type)
+      : catalog = null,
+        db = null,
+        table = null,
+        orgTable = null,
+        name = null,
+        orgName = null,
+        characterSet = null,
+        length = null,
+        flags = null,
+        decimals = null,
+        defaultValue = null;
   final String? catalog;
   final String? db;
   final String? table;
@@ -77,54 +135,6 @@ class Field {
       default:
         return 'UNKNOWN';
     }
-  }
-
-  Field._internal(
-      this.catalog,
-      this.db,
-      this.table,
-      this.orgTable,
-      this.name,
-      this.orgName,
-      this.characterSet,
-      this.length,
-      this.type,
-      this.flags,
-      this.decimals,
-      this.defaultValue);
-  Field.forTests(this.type)
-      : catalog = null,
-        db = null,
-        table = null,
-        orgTable = null,
-        name = null,
-        orgName = null,
-        characterSet = null,
-        length = null,
-        flags = null,
-        decimals = null,
-        defaultValue = null;
-
-  factory Field(Buffer buffer) {
-    final catalog = buffer.readLengthCodedString();
-    final db = buffer.readLengthCodedString();
-    final table = buffer.readLengthCodedString();
-    final orgTable = buffer.readLengthCodedString();
-    final name = buffer.readLengthCodedString();
-    final orgName = buffer.readLengthCodedString();
-    buffer.skip(1);
-    final characterSet = buffer.readUint16();
-    final length = buffer.readUint32();
-    final type = buffer.readByte();
-    final flags = buffer.readUint16();
-    final decimals = buffer.readByte();
-    buffer.skip(2);
-    int? defaultValue;
-    if (buffer.canReadMore()) {
-      defaultValue = buffer.readLengthCodedBinary();
-    }
-    return Field._internal(catalog, db, table, orgTable, name, orgName,
-        characterSet, length, type, flags, decimals, defaultValue);
   }
 
   @override

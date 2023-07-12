@@ -22,8 +22,8 @@ class MockSocket extends StreamView<RawSocketEvent> implements RawSocket {
     if (count > _data.length) {
       count = _data.length;
     }
-    var data = _data.getRange(0, count);
-    var list = Uint8List(data.length);
+    final data = _data.getRange(0, count);
+    final list = Uint8List(data.length);
     list.setRange(0, data.length, data);
     _data.removeRange(0, count);
     return list;
@@ -49,5 +49,5 @@ class MockSocket extends StreamView<RawSocketEvent> implements RawSocket {
   bool setOption(SocketOption option, bool enabled) => true; // No-op
 
   @override
-  Object noSuchMethod(a) => super.noSuchMethod(a);
+  dynamic noSuchMethod(Invocation a) => super.noSuchMethod(a);
 }

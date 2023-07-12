@@ -45,17 +45,17 @@ void main() {
 
   test('queued queries test', () async {
     // Even though we do not await these queries they should be queued.
-    Future _;
+    Future<void> _;
     _ = conn.query('DROP TABLE IF EXISTS t1');
     _ = conn.query('CREATE TABLE IF NOT EXISTS t1 (a INT)');
-    var f1 = conn.query('SELECT * FROM `t1`');
+    final f1 = conn.query('SELECT * FROM `t1`');
 
     _ = conn.query('INSERT INTO `t1` (a) VALUES (?)', [1]);
 
-    var f2 = conn.query('SELECT * FROM `t1` WHERE a = ?', [1]);
+    final f2 = conn.query('SELECT * FROM `t1` WHERE a = ?', [1]);
 
-    var r1 = await f1;
-    var r2 = await f2;
+    final r1 = await f1;
+    final r2 = await f2;
 
     expect(r1.length, 0);
     expect(r2.length, 1);
@@ -63,12 +63,13 @@ void main() {
 
   test('Stored procedure', () async {
     await conn.query('DROP PROCEDURE IF EXISTS p');
-    await conn.query('''CREATE PROCEDURE p(a DOUBLE, b DOUBLE)
+    await conn.query('''
+CREATE PROCEDURE p(a DOUBLE, b DOUBLE)
 BEGIN
   SELECT a * b;
 END
 ''');
-    var results = await conn.query('CALL p(2, 3)');
+    final results = await conn.query('CALL p(2, 3)');
     expect(results.first.first, 6);
   });
 
@@ -98,8 +99,10 @@ END
     } on MySqlClientError catch (e1) {
       e = e1;
     }
-    expect(e?.message,
-        'Length of parameters (1) does not match parameter count in query (2)');
+    expect(
+      e?.message,
+      'Length of parameters (1) does not match parameter count in query (2)',
+    );
   });
   test('json type test', () async {
     await conn.query('DROP TABLE IF EXISTS tjson');
@@ -108,9 +111,9 @@ END
       3,
       json.encode({'key': 'val'})
     ]);
-    var result = await conn.query('SELECT * FROM tjson');
+    final result = await conn.query('SELECT * FROM tjson');
     expect(result.first.first, 3);
-    final obj = json.decode(result.first.last);
+    final obj = json.decode(result.first.last.toString());
     expect(obj, {'key': 'val'});
   });
 
@@ -122,9 +125,9 @@ END
       n,
       n,
     ]);
-    var result = await conn.query('SELECT * FROM timezonetest');
-    DateTime ts = result.first.first;
-    DateTime dt = result.first.last;
+    final result = await conn.query('SELECT * FROM timezonetest');
+    final ts = result.first.first as DateTime;
+    final dt = result.first.last as DateTime;
     expect(ts.difference(n).inMicroseconds, lessThan(100));
     expect(dt.difference(n).inMicroseconds, lessThan(100));
   });

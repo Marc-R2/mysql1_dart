@@ -1,32 +1,20 @@
-library mysql1.binary_data_packet;
-
 import 'package:logging/logging.dart';
-
-import '../constants.dart';
-
-import '../blob.dart';
-import '../buffer.dart';
-
-import '../results/field.dart';
-import '../results/row.dart';
+import 'package:mysql1/src/blob.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/results/field.dart';
+import 'package:mysql1/src/results/row.dart';
 
 class BinaryDataPacket extends ResultRow {
-  final Logger log = Logger('BinaryDataPacket');
-
-  BinaryDataPacket.forTests(List? _values) {
-    values = _values;
-  }
-
   BinaryDataPacket(Buffer buffer, List<Field> fieldPackets) {
     buffer.skip(1);
-    var nulls =
-        buffer.readList(((fieldPackets.length + 7 + 2) / 8).floor().toInt());
+    final nulls = buffer.readList(((fieldPackets.length + 7 + 2) / 8).floor());
     log.fine('Nulls: $nulls');
 
     var shift = 2;
     var byte = 0;
-    var nullMap = List<bool>.generate(fieldPackets.length, (index) {
-      var mask = 1 << shift;
+    final nullMap = List<bool>.generate(fieldPackets.length, (index) {
+      final mask = 1 << shift;
       final value = (nulls[byte] & mask) != 0;
       shift++;
       if (shift > 7) {
@@ -44,72 +32,77 @@ class BinaryDataPacket extends ResultRow {
         values![i] = null;
         continue;
       }
-      var field = fieldPackets[i];
+      final field = fieldPackets[i];
       values![i] = readField(field, buffer);
       fields[field.name!] = values![i];
     }
   }
+
+  BinaryDataPacket.forTests(List<Object?>? _values) {
+    values = _values;
+  }
+  final Logger log = Logger('BinaryDataPacket');
 
   @override
   Object? readField(Field field, Buffer buffer) {
     switch (field.type) {
       case FIELD_TYPE_BLOB:
         log.fine('BLOB');
-        var len = buffer.readLengthCodedBinary();
+        final len = buffer.readLengthCodedBinary();
         if (len == null) {
           return Blob.fromBytes([]);
         }
-        var value = Blob.fromBytes(buffer.readList(len));
+        final value = Blob.fromBytes(buffer.readList(len));
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_TINY:
         log.fine('TINY');
-        var value = buffer.readByte();
+        final value = buffer.readByte();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_SHORT:
         log.fine('SHORT');
-        var value = buffer.readInt16();
+        final value = buffer.readInt16();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_INT24:
         log.fine('INT24');
-        var value = buffer.readInt32();
+        final value = buffer.readInt32();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_LONG:
         log.fine('LONG');
-        var value = buffer.readInt32();
+        final value = buffer.readInt32();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_LONGLONG:
         log.fine('LONGLONG');
-        var value = buffer.readInt64();
+        final value = buffer.readInt64();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_NEWDECIMAL:
         log.fine('NEWDECIMAL');
-        var len = buffer.readByte();
-        var num = buffer.readString(len);
-        var value = double.parse(num);
+        final len = buffer.readByte();
+        final num = buffer.readString(len);
+        final value = double.parse(num);
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_FLOAT:
         log.fine('FLOAT');
-        var value = buffer.readFloat();
+        final value = buffer.readFloat();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_DOUBLE:
         log.fine('DOUBLE');
-        var value = buffer.readDouble();
+        final value = buffer.readDouble();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_BIT:
         log.fine('BIT');
-        var len = buffer.readByte();
-        var list = buffer.readList(len);
+        final len = buffer.readByte();
+        final list = buffer.readList(len);
         var value = 0;
-        for (var num in list) {
+        for (final num in list) {
           value = (value << 8) + num;
         }
         log.fine('Value: $value');
@@ -118,8 +111,8 @@ class BinaryDataPacket extends ResultRow {
       case FIELD_TYPE_DATE:
       case FIELD_TYPE_TIMESTAMP:
         log.fine('DATE/DATETIME');
-        var len = buffer.readByte();
-        var date = buffer.readList(len);
+        final len = buffer.readByte();
+        final date = buffer.readList(len);
         var year = 0;
         var month = 0;
         var day = 0;
@@ -145,14 +138,21 @@ class BinaryDataPacket extends ResultRow {
           }
         }
 
-        var value = DateTime.utc(
-            year, month, day, hours, minutes, seconds, billionths ~/ 1000000);
+        final value = DateTime.utc(
+          year,
+          month,
+          day,
+          hours,
+          minutes,
+          seconds,
+          billionths ~/ 1000000,
+        );
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_TIME:
         log.fine('TIME');
-        var len = buffer.readByte();
-        var time = buffer.readList(len);
+        final len = buffer.readByte();
+        final time = buffer.readList(len);
 
         var sign = 1;
         var days = 0;
@@ -178,37 +178,38 @@ class BinaryDataPacket extends ResultRow {
                 (time[11] << 0x18);
           }
         }
-        var value = Duration(
-            days: days * sign,
-            hours: hours * sign,
-            minutes: minutes * sign,
-            seconds: seconds * sign,
-            milliseconds: (billionths ~/ 1000000) * sign);
+        final value = Duration(
+          days: days * sign,
+          hours: hours * sign,
+          minutes: minutes * sign,
+          seconds: seconds * sign,
+          milliseconds: (billionths ~/ 1000000) * sign,
+        );
         return value;
       case FIELD_TYPE_YEAR:
         log.fine('YEAR');
-        var value = buffer.readInt16();
+        final value = buffer.readInt16();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_STRING:
         log.fine('STRING');
-        var value = buffer.readLengthCodedString();
+        final value = buffer.readLengthCodedString();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_VAR_STRING:
         log.fine('STRING');
-        var value = buffer.readLengthCodedString();
+        final value = buffer.readLengthCodedString();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_GEOMETRY:
         log.fine('GEOMETRY - not implemented');
-        var len = buffer.readByte();
+        final len = buffer.readByte();
         //TODO
-        var value = buffer.readList(len);
+        final value = buffer.readList(len);
         return value;
       case FIELD_TYPE_JSON:
         log.fine('Field type  ${field.type}');
-        var value = buffer.readLengthCodedString();
+        final value = buffer.readLengthCodedString();
         log.fine('Value: $value');
         return value;
       case FIELD_TYPE_NEWDATE:

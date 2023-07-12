@@ -1,7 +1,5 @@
-library sjljocky.buffer;
-
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
@@ -15,15 +13,6 @@ import 'package:logging/logging.dart';
 /// As per mysql spec, numbers here are all unsigned.
 /// Which makes things much easier.
 class Buffer {
-  final Logger log;
-  int _writePos = 0;
-  int _readPos = 0;
-
-  final Uint8List _list;
-  late ByteData _data;
-
-  Uint8List get list => _list;
-
   /// Creates a [Buffer] of the given [size]
   Buffer(int size)
       : _list = Uint8List(size),
@@ -38,6 +27,14 @@ class Buffer {
     _list.setRange(0, list.length, list);
     _data = ByteData.view(_list.buffer);
   }
+  final Logger log;
+  int _writePos = 0;
+  int _readPos = 0;
+
+  final Uint8List _list;
+  late ByteData _data;
+
+  Uint8List get list => _list;
 
   /// Returns true if more data can be read from the buffer, false otherwise.
   bool canReadMore() => _readPos < _list.lengthInBytes;
@@ -48,7 +45,7 @@ class Buffer {
     final bytes = socket.read(count)?.toList();
     if (bytes == null) return 0;
 
-    var bytesRead = bytes.length;
+    final bytesRead = bytes.length;
     _list.setRange(_writePos, _writePos + bytesRead, bytes);
     _writePos += bytesRead;
     return bytesRead;
@@ -109,7 +106,7 @@ class Buffer {
   /// Reads a null terminated list of ints from the buffer.
   /// Returns the list of ints from the buffer, without the terminating zero
   List<int> readNullTerminatedList() {
-    var s = <int>[];
+    final s = <int>[];
     while (_list[_readPos] != 0) {
       s.add(_list[_readPos]);
       _readPos++;
@@ -138,8 +135,10 @@ class Buffer {
 
   /// Reads a string of the given [length] from the buffer.
   String readString(int length) {
-    var s = utf8.decode(_list.sublist(_readPos, _readPos + length),
-        allowMalformed: true);
+    final s = utf8.decode(
+      _list.sublist(_readPos, _readPos + length),
+      allowMalformed: true,
+    );
     _readPos += length;
     return s;
   }
@@ -148,7 +147,7 @@ class Buffer {
   /// It will read up to nine bytes from the stream, depending on the first byte.
   /// Returns an unsigned integer.
   int? readLengthCodedBinary() {
-    var first = readByte();
+    final first = readByte();
     if (first < 251) {
       return first;
     }
@@ -205,7 +204,7 @@ class Buffer {
 
   /// Returns a length coded string, read from the buffer.
   String? readLengthCodedString() {
-    var length = readLengthCodedBinary();
+    final length = readLengthCodedBinary();
     if (length == null) {
       return null;
     }
@@ -224,7 +223,7 @@ class Buffer {
 
   /// Returns a 16-bit integer, read from the buffer
   int readInt16() {
-    var result = _data.getInt16(_readPos, Endian.little);
+    final result = _data.getInt16(_readPos, Endian.little);
     _readPos += 2;
     return result;
   }
@@ -237,7 +236,7 @@ class Buffer {
 
   /// Returns a 16-bit integer, read from the buffer
   int readUint16() {
-    var result = _data.getUint16(_readPos, Endian.little);
+    final result = _data.getUint16(_readPos, Endian.little);
     _readPos += 2;
     return result;
   }
@@ -261,7 +260,7 @@ class Buffer {
 
   /// Returns a 32-bit integer, read from the buffer.
   int readInt32() {
-    var val = _data.getInt32(_readPos, Endian.little);
+    final val = _data.getInt32(_readPos, Endian.little);
     _readPos += 4;
     return val;
   }
@@ -274,7 +273,7 @@ class Buffer {
 
   /// Returns a 32-bit integer, read from the buffer.
   int readUint32() {
-    var val = _data.getUint32(_readPos, Endian.little);
+    final val = _data.getUint32(_readPos, Endian.little);
     _readPos += 4;
     return val;
   }
@@ -287,7 +286,7 @@ class Buffer {
 
   /// Returns a 64-bit integer, read from the buffer.
   int readInt64() {
-    var val = _data.getInt64(_readPos, Endian.little);
+    final val = _data.getInt64(_readPos, Endian.little);
     _readPos += 8;
     return val;
   }
@@ -300,7 +299,7 @@ class Buffer {
 
   /// Returns a 64-bit integer, read from the buffer.
   int readUint64() {
-    var val = _data.getUint64(_readPos, Endian.little);
+    final val = _data.getUint64(_readPos, Endian.little);
     _readPos += 8;
     return val;
   }
@@ -325,7 +324,7 @@ class Buffer {
   }
 
   double readFloat() {
-    var val = _data.getFloat32(_readPos, Endian.little);
+    final val = _data.getFloat32(_readPos, Endian.little);
     _readPos += 4;
     return val;
   }
@@ -336,7 +335,7 @@ class Buffer {
   }
 
   double readDouble() {
-    var val = _data.getFloat64(_readPos, Endian.little);
+    final val = _data.getFloat64(_readPos, Endian.little);
     _readPos += 8;
     return val;
   }
@@ -347,7 +346,7 @@ class Buffer {
   }
 
   static String listChars(Uint8List list) {
-    var result = StringBuffer();
+    final result = StringBuffer();
     for (final e in list) {
       if (e >= 32 && e < 127) {
         result.write(String.fromCharCodes([e]));
@@ -359,10 +358,10 @@ class Buffer {
   }
 
   static String debugChars(Uint8List list) {
-    var result = StringBuffer();
+    final result = StringBuffer();
 
-    var left = StringBuffer();
-    var right = StringBuffer();
+    final left = StringBuffer();
+    final right = StringBuffer();
 
     for (final e in list) {
       if (e >= 32 && e < 127) {

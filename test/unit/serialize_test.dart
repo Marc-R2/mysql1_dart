@@ -1,37 +1,35 @@
-library mysql1.serialize_test;
-
 import 'package:mysql1/src/buffer.dart';
 
 import 'package:test/test.dart';
 
-final double SMALLEST_POSITIVE_SUBNORMAL_FLOAT = 1.4012984643248170E-45;
-final double LARGEST_POSITIVE_SUBNORMAL_FLOAT = 1.1754942106924411E-38;
-final double SMALLEST_POSITIVE_NORMAL_FLOAT = 1.1754943508222875E-38;
-final double LARGEST_POSITIVE_NORMAL_FLOAT = 3.4028234663852886E+38;
+const double SMALLEST_POSITIVE_SUBNORMAL_FLOAT = 1.4012984643248170E-45;
+const double LARGEST_POSITIVE_SUBNORMAL_FLOAT = 1.1754942106924411E-38;
+const double SMALLEST_POSITIVE_NORMAL_FLOAT = 1.1754943508222875E-38;
+const double LARGEST_POSITIVE_NORMAL_FLOAT = 3.4028234663852886E+38;
 
-final double LARGEST_NEGATIVE_NORMAL_FLOAT =
+const double LARGEST_NEGATIVE_NORMAL_FLOAT =
     -1.1754943508222875E-38; // closest to zero
-final double SMALLEST_NEGATIVE_NORMAL_FLOAT =
+const double SMALLEST_NEGATIVE_NORMAL_FLOAT =
     -3.4028234663852886E+38; // most negative
-final double LARGEST_NEGATIVE_SUBNORMAL_FLOAT = -1.1754942106924411E-38;
-final double SMALLEST_NEGATIVE_SUBNORMAL_FLOAT = -1.4012984643248170E-45;
+const double LARGEST_NEGATIVE_SUBNORMAL_FLOAT = -1.1754942106924411E-38;
+const double SMALLEST_NEGATIVE_SUBNORMAL_FLOAT = -1.4012984643248170E-45;
 
-final double SMALLEST_POSITIVE_SUBNORMAL_DOUBLE = 4.9406564584124654E-324;
-final double LARGEST_POSITIVE_SUBNORMAL_DOUBLE = 2.2250738585072010E-308;
-final double SMALLEST_POSITIVE_NORMAL_DOUBLE = 2.2250738585072014E-308;
-final double LARGEST_POSITIVE_NORMAL_DOUBLE = 1.7976931348623157E+308;
+const double SMALLEST_POSITIVE_SUBNORMAL_DOUBLE = 4.9406564584124654E-324;
+const double LARGEST_POSITIVE_SUBNORMAL_DOUBLE = 2.2250738585072010E-308;
+const double SMALLEST_POSITIVE_NORMAL_DOUBLE = 2.2250738585072014E-308;
+const double LARGEST_POSITIVE_NORMAL_DOUBLE = 1.7976931348623157E+308;
 
-final double LARGEST_NEGATIVE_NORMAL_DOUBLE =
+const double LARGEST_NEGATIVE_NORMAL_DOUBLE =
     -2.2250738585072014E-308; // closest to zero
-final double SMALLEST_NEGATIVE_NORMAL_DOUBLE =
+const double SMALLEST_NEGATIVE_NORMAL_DOUBLE =
     -1.7976931348623157E+308; // most negative
-final double LARGEST_NEGATIVE_SUBNORMAL_DOUBLE = -4.9406564584124654E-324;
-final double SMALLEST_NEGATIVE_SUBNORMAL_DOUBLE = -2.2250738585072010E-308;
+const double LARGEST_NEGATIVE_SUBNORMAL_DOUBLE = -4.9406564584124654E-324;
+const double SMALLEST_NEGATIVE_SUBNORMAL_DOUBLE = -2.2250738585072010E-308;
 
 String _bufferToHexString(Buffer list, [bool reverse = false]) {
-  var s = StringBuffer();
+  final s = StringBuffer();
   for (var i = 0; i < list.length; i++) {
-    var x =
+    final x =
         list[reverse ? list.length - i - 1 : i].toRadixString(16).toUpperCase();
     if (x.length == 1) {
       s.write('0');
@@ -43,21 +41,21 @@ String _bufferToHexString(Buffer list, [bool reverse = false]) {
 
 void main() {
   test('can write zero float', () {
-    var buffer = Buffer(4);
-    var n = 0.0;
+    final buffer = Buffer(4);
+    const n = 0.0;
     buffer.writeFloat(n);
     expect(_bufferToHexString(buffer, true), equals('00000000'));
   });
 
   test('can write zero double', () {
-    var buffer = Buffer(8);
-    var n = 0.0;
+    final buffer = Buffer(8);
+    const n = 0.0;
     buffer.writeDouble(n);
     expect(_bufferToHexString(buffer, true), equals('0000000000000000'));
   });
 
   test('can write one or greater float', () {
-    var buffer = Buffer(4);
+    final buffer = Buffer(4);
     var n = 1.0;
     buffer.writeFloat(n);
     expect(_bufferToHexString(buffer, true), equals('3F800000'));
@@ -81,7 +79,7 @@ void main() {
   });
 
   test('can write one or greater double', () {
-    var buffer = Buffer(8);
+    final buffer = Buffer(8);
     var n = 1.0;
     buffer.writeDouble(n);
     expect(_bufferToHexString(buffer, true), equals('3FF0000000000000'));
@@ -105,7 +103,7 @@ void main() {
   });
 
   test('can write less than one float', () {
-    var buffer = Buffer(4);
+    final buffer = Buffer(4);
 
     var n = 0.1;
     buffer.writeFloat(n);
@@ -129,7 +127,7 @@ void main() {
   });
 
   test('can write less than one double', () {
-    var buffer = Buffer(8);
+    final buffer = Buffer(8);
 
     var n = 0.1;
     buffer.writeDouble(n);
@@ -148,7 +146,7 @@ void main() {
   });
 
   test('can write non numbers float', () {
-    var buffer = Buffer(4);
+    final buffer = Buffer(4);
 
     var n = 1.0 / 0.0;
     buffer.writeFloat(n);
@@ -166,7 +164,7 @@ void main() {
   });
 
   test('can write non numbers double', () {
-    var buffer = Buffer(8);
+    final buffer = Buffer(8);
 
     var n = 1.0 / 0.0;
     buffer.writeDouble(n);

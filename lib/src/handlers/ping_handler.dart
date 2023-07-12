@@ -1,10 +1,7 @@
-library mysql1.ping_handler;
-
 import 'package:logging/logging.dart';
-
-import '../constants.dart';
-import '../buffer.dart';
-import 'handler.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/handler.dart';
 
 class PingHandler extends Handler {
   PingHandler() : super(Logger('PingHandler'));
@@ -12,7 +9,7 @@ class PingHandler extends Handler {
   @override
   Buffer createRequest() {
     log.finest('Creating buffer for PingHandler');
-    var buffer = Buffer(1);
+    final buffer = Buffer(1);
     buffer.writeByte(COM_PING);
     return buffer;
   }

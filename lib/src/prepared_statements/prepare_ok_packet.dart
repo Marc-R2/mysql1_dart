@@ -1,18 +1,6 @@
-library mysql1.prepare_ok_packet;
-
-import '../buffer.dart';
+import 'package:mysql1/src/buffer.dart';
 
 class PrepareOkPacket {
-  late int _statementHandlerId;
-  late int _columnCount;
-  late int _parameterCount;
-  late int _warningCount;
-
-  int get statementHandlerId => _statementHandlerId;
-  int get columnCount => _columnCount;
-  int get parameterCount => _parameterCount;
-  int get warningCount => _warningCount;
-
   PrepareOkPacket(Buffer buffer) {
     buffer.seek(1);
     _statementHandlerId = buffer.readUint32();
@@ -25,6 +13,15 @@ class PrepareOkPacket {
       _warningCount = 0;
     }
   }
+  late int _statementHandlerId;
+  late int _columnCount;
+  late int _parameterCount;
+  late int _warningCount;
+
+  int get statementHandlerId => _statementHandlerId;
+  int get columnCount => _columnCount;
+  int get parameterCount => _parameterCount;
+  int get warningCount => _warningCount;
 
   @override
   String toString() =>

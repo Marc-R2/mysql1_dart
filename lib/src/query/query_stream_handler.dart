@@ -1,26 +1,21 @@
 // ignore_for_file: return_of_invalid_type, strong_mode_implicit_dynamic_return, strong_mode_implicit_dynamic_parameter, invalid_assignment, strong_mode_implicit_dynamic_variable
 
-library mysql1.query_stream_handler;
-
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
-
-import '../constants.dart';
-import '../buffer.dart';
-
-import '../handlers/handler.dart';
-import '../handlers/ok_packet.dart';
-
-import '../results/row.dart';
-import '../results/field.dart';
-import '../results/results_impl.dart';
-
-import 'result_set_header_packet.dart';
-import 'standard_data_packet.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/handler.dart';
+import 'package:mysql1/src/handlers/ok_packet.dart';
+import 'package:mysql1/src/query/result_set_header_packet.dart';
+import 'package:mysql1/src/query/standard_data_packet.dart';
+import 'package:mysql1/src/results/field.dart';
+import 'package:mysql1/src/results/results_impl.dart';
+import 'package:mysql1/src/results/row.dart';
 
 class QueryStreamHandler extends Handler {
+  QueryStreamHandler(this._sql) : super(Logger('QueryStreamHandler'));
   static const int STATE_HEADER_PACKET = 0;
   static const int STATE_FIELD_PACKETS = 1;
   static const int STATE_ROW_PACKETS = 2;
@@ -33,12 +28,10 @@ class QueryStreamHandler extends Handler {
 
   StreamController<ResultRow>? _streamController;
 
-  QueryStreamHandler(this._sql) : super(Logger('QueryStreamHandler'));
-
   @override
   Buffer createRequest() {
-    var encoded = utf8.encode(_sql);
-    var buffer = Buffer(encoded.length + 1);
+    final encoded = utf8.encode(_sql);
+    final buffer = Buffer(encoded.length + 1);
     buffer.writeByte(COM_QUERY);
     buffer.writeList(encoded);
     return buffer;
@@ -47,7 +40,9 @@ class QueryStreamHandler extends Handler {
   @override
   HandlerResponse processResponse(Buffer response) {
     log.fine('Processing query response');
-    var packet = checkResponse(response, false, _state == STATE_ROW_PACKETS);
+    final packet =
+        checkResponse(response, isHandlingRows: _state == STATE_ROW_PACKETS);
+
     if (packet == null) {
       if (response[0] == PACKET_EOF) {
         if (_state == STATE_FIELD_PACKETS) {
@@ -76,12 +71,19 @@ class QueryStreamHandler extends Handler {
 
   HandlerResponse _handleEndOfFields() {
     _state = STATE_ROW_PACKETS;
-    _streamController = StreamController<ResultRow>(onCancel: () {
-      _streamController!.close();
-    });
+    _streamController = StreamController<ResultRow>(
+      onCancel: () {
+        _streamController!.close();
+      },
+    );
     return HandlerResponse(
-        result: ResultsStream(null, null, fieldPackets,
-            stream: _streamController!.stream));
+      result: ResultsStream(
+        null,
+        null,
+        fieldPackets,
+        stream: _streamController!.stream,
+      ),
+    );
   }
 
   HandlerResponse _handleEndOfRows() {
@@ -100,13 +102,13 @@ class QueryStreamHandler extends Handler {
   }
 
   void _handleFieldPacket(Buffer response) {
-    var fieldPacket = Field(response);
+    final fieldPacket = Field(response);
     log.fine(fieldPacket.toString());
     fieldPackets.add(fieldPacket);
   }
 
   void _handleRowPacket(Buffer response) {
-    var dataPacket = StandardDataPacket(response, fieldPackets);
+    final dataPacket = StandardDataPacket(response, fieldPackets);
     log.fine(dataPacket.toString());
     _streamController?.add(dataPacket);
   }
@@ -121,9 +123,13 @@ class QueryStreamHandler extends Handler {
 
     //TODO is this finished value right?
     return HandlerResponse(
-        finished: finished,
-        result: ResultsStream(
-            _okPacket!.insertId, _okPacket!.affectedRows, fieldPackets));
+      finished: finished,
+      result: ResultsStream(
+        _okPacket!.insertId,
+        _okPacket!.affectedRows,
+        fieldPackets,
+      ),
+    );
   }
 
   @override

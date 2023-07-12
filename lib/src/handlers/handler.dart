@@ -1,12 +1,9 @@
-library mysql1.handler;
-
 import 'package:logging/logging.dart';
-
-import '../constants.dart';
-import '../buffer.dart';
-import '../mysql_exception.dart';
-import '../prepared_statements/prepare_ok_packet.dart';
-import 'ok_packet.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/ok_packet.dart';
+import 'package:mysql1/src/mysql_exception.dart';
+import 'package:mysql1/src/prepared_statements/prepare_ok_packet.dart';
 
 class _NoResult {
   const _NoResult();
@@ -21,14 +18,16 @@ const _NO_RESULT = _NoResult();
 /// is false, [nextHandler] contains the next handler which should process the
 /// next packet from the server, and [result] is [_NO_RESULT].
 class HandlerResponse {
+  HandlerResponse({
+    this.finished = false,
+    this.nextHandler,
+    this.result = _NO_RESULT,
+  });
   final bool finished;
   final Handler? nextHandler;
   final dynamic result;
 
   bool get hasResult => result != _NO_RESULT;
-
-  HandlerResponse(
-      {this.finished = false, this.nextHandler, this.result = _NO_RESULT});
 
   static final HandlerResponse notFinished = HandlerResponse();
 }
@@ -39,9 +38,8 @@ class HandlerResponse {
 /// request which the handler creates, and then parsing the result returned by
 /// the mysql server, either synchronously or asynchronously.
 abstract class Handler {
-  final Logger log;
-
   Handler(this.log);
+  final Logger log;
 
   /// Returns a [Buffer] containing the command packet.
   Buffer createRequest();
@@ -61,15 +59,18 @@ abstract class Handler {
   /// a [MySqlException] if it was an Error packet, or returns [:null:]
   /// if the packet has not been handled by this method.
   ///
-  dynamic checkResponse(Buffer response,
-      [bool prepareStmt = false, bool isHandlingRows = false]) {
+  dynamic checkResponse(
+    Buffer response, {
+    bool prepareStmt = false,
+    bool isHandlingRows = false,
+  }) {
     if (response[0] == PACKET_OK && !isHandlingRows) {
       if (prepareStmt) {
-        var okPacket = PrepareOkPacket(response);
+        final okPacket = PrepareOkPacket(response);
         log.fine(okPacket.toString());
         return okPacket;
       } else {
-        var okPacket = OkPacket(response);
+        final okPacket = OkPacket(response);
         log.fine(okPacket.toString());
         return okPacket;
       }

@@ -1,10 +1,14 @@
-library mysql1.prepared_query;
-
-import '../results/field.dart';
-
-import 'prepare_handler.dart';
+import 'package:mysql1/src/prepared_statements/prepare_handler.dart';
+import 'package:mysql1/src/results/field.dart';
 
 class PreparedQuery {
+  PreparedQuery(PrepareHandler handler)
+      : sql = handler.sql,
+        parameterCount = handler.parameters?.length ?? 0,
+        columns = List.from(
+          handler.columns?.where((element) => element != null) ?? <Field>[],
+        ),
+        statementHandlerId = handler.okPacket.statementHandlerId;
   final String sql;
 
   /// You cannot rely on the type of the parameters in mysql so we do not expose it as
@@ -14,11 +18,4 @@ class PreparedQuery {
   final int parameterCount;
   final List<Field> columns;
   final int statementHandlerId;
-
-  PreparedQuery(PrepareHandler handler)
-      : sql = handler.sql,
-        parameterCount = handler.parameters?.length ?? 0,
-        columns = List.from(
-            handler.columns?.where((element) => element != null) ?? <Field>[]),
-        statementHandlerId = handler.okPacket.statementHandlerId;
 }

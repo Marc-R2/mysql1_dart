@@ -1,22 +1,18 @@
-library mysql1.use_db_handler;
-
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
-
-import '../constants.dart';
-import '../buffer.dart';
-import 'handler.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/handler.dart';
 
 class UseDbHandler extends Handler {
-  final String _dbName;
-
   UseDbHandler(this._dbName) : super(Logger('UseDbHandler'));
+  final String _dbName;
 
   @override
   Buffer createRequest() {
-    var encoded = utf8.encode(_dbName);
-    var buffer = Buffer(encoded.length + 1);
+    final encoded = utf8.encode(_dbName);
+    final buffer = Buffer(encoded.length + 1);
     buffer.writeByte(COM_INIT_DB);
     buffer.writeList(encoded);
     return buffer;

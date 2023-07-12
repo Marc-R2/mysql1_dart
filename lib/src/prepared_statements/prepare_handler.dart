@@ -1,21 +1,18 @@
 // ignore_for_file: strong_mode_implicit_dynamic_variable
 
-library mysql1.prepare_handler;
-
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
-
-import '../constants.dart';
-import '../buffer.dart';
-import '../mysql_protocol_error.dart';
-import '../handlers/handler.dart';
-import '../results/field.dart';
-
-import 'prepared_query.dart';
-import 'prepare_ok_packet.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/handler.dart';
+import 'package:mysql1/src/mysql_protocol_error.dart';
+import 'package:mysql1/src/prepared_statements/prepare_ok_packet.dart';
+import 'package:mysql1/src/prepared_statements/prepared_query.dart';
+import 'package:mysql1/src/results/field.dart';
 
 class PrepareHandler extends Handler {
+  PrepareHandler(this._sql) : super(Logger('PrepareHandler'));
   final String _sql;
   late PrepareOkPacket _okPacket;
   int? _parametersToRead;
@@ -28,12 +25,10 @@ class PrepareHandler extends Handler {
   List<Field?>? get parameters => _parameters;
   List<Field?>? get columns => _columns;
 
-  PrepareHandler(this._sql) : super(Logger('PrepareHandler'));
-
   @override
   Buffer createRequest() {
-    var encoded = utf8.encode(_sql);
-    var buffer = Buffer(encoded.length + 1);
+    final encoded = utf8.encode(_sql);
+    final buffer = Buffer(encoded.length + 1);
     buffer.writeByte(COM_STMT_PREPARE);
     buffer.writeList(encoded);
     return buffer;
@@ -42,7 +37,7 @@ class PrepareHandler extends Handler {
   @override
   HandlerResponse processResponse(Buffer response) {
     log.fine('Prepare processing response');
-    var packet = checkResponse(response, true);
+    final packet = checkResponse(response, prepareStmt: true);
     if (packet == null) {
       log.fine('Not an OK packet, params to read: $_parametersToRead');
       if (_parametersToRead != null &&
@@ -52,10 +47,11 @@ class PrepareHandler extends Handler {
           log.fine('EOF');
           if (_parametersToRead != 0) {
             throw createMySqlProtocolError(
-                'Unexpected EOF packet; was expecting another $_parametersToRead parameter(s)');
+              'Unexpected EOF packet; was expecting another $_parametersToRead parameter(s)',
+            );
           }
         } else {
-          var fieldPacket = Field(response);
+          final fieldPacket = Field(response);
           log.fine('field packet: $fieldPacket');
           _parameters![_okPacket.parameterCount - _parametersToRead!] =
               fieldPacket;
@@ -68,10 +64,11 @@ class PrepareHandler extends Handler {
           log.fine('EOF');
           if (_columnsToRead != 0) {
             throw createMySqlProtocolError(
-                'Unexpected EOF packet; was expecting another $_columnsToRead column(s)');
+              'Unexpected EOF packet; was expecting another $_columnsToRead column(s)',
+            );
           }
         } else {
-          var fieldPacket = Field(response);
+          final fieldPacket = Field(response);
           log.fine('field packet (column): $fieldPacket');
           _columns![_okPacket.columnCount - _columnsToRead!] = fieldPacket;
         }

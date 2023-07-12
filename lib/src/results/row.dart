@@ -1,7 +1,7 @@
 import 'dart:collection';
 
-import 'field.dart';
-import '../buffer.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/results/field.dart';
 
 /// A row of data. Fields can be retrieved by index, or by name.
 ///

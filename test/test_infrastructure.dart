@@ -1,7 +1,5 @@
-library mysql1.test.test_infrastructure;
-
-import 'package:options_file/options_file.dart';
 import 'package:mysql1/mysql1.dart';
+import 'package:options_file/options_file.dart';
 import 'package:test/test.dart';
 
 import 'test_util.dart';
@@ -10,11 +8,11 @@ MySqlConnection get conn => _conn;
 late MySqlConnection _conn;
 
 void initializeTest([String? tableName, String? createSql, String? insertSql]) {
-  var options = OptionsFile('connection.options');
+  final options = OptionsFile('connection.options');
 
-  var s = ConnectionSettings(
+  final s = ConnectionSettings(
     user: options.getString('user'),
-    password: options.getString('password', null),
+    password: options.getString('password'),
     port: options.getInt('port', 3306)!,
     db: options.getString('db'),
     host: options.getString('host', 'localhost')!,
@@ -22,7 +20,7 @@ void initializeTest([String? tableName, String? createSql, String? insertSql]) {
 
   setUp(() async {
     // Ensure db exists
-    var checkSettings = ConnectionSettings.copy(s);
+    final checkSettings = ConnectionSettings.copy(s);
     checkSettings.db = null;
     final c = await MySqlConnection.connect(checkSettings);
     await c.query('CREATE DATABASE IF NOT EXISTS ${s.db} CHARACTER SET utf8');

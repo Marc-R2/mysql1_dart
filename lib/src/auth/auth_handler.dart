@@ -1,14 +1,11 @@
-library mysql1.auth_handler;
-
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:mysql1/src/auth/handshake_handler.dart';
-
-import '../constants.dart';
-import '../buffer.dart';
-import '../handlers/handler.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/handler.dart';
 
 List<int> _makeMysqlNativePassword(List<int> scrambler, String password) {
   // SHA1(password)
@@ -45,6 +42,19 @@ List<int> _makeCachingSha2Password(List<int> scrambler, String password) {
 }
 
 class AuthHandler extends Handler {
+//  final bool _ssl;
+
+  AuthHandler(
+    this.username,
+    this.password,
+    this.db,
+    this.scrambleBuffer,
+    this.clientFlags,
+    this.maxPacketSize,
+    this.characterSet,
+    this.authPlugin,
+  ) : /*this._ssl = false,*/
+        super(Logger('AuthHandler'));
   final String? username;
   final String? password;
   final String? db;
@@ -53,13 +63,6 @@ class AuthHandler extends Handler {
   final int maxPacketSize;
   final int characterSet;
   final AuthPlugin authPlugin;
-//  final bool _ssl;
-
-  AuthHandler(this.username, this.password, this.db, this.scrambleBuffer,
-      this.clientFlags, this.maxPacketSize, this.characterSet, this.authPlugin,
-      {bool ssl = false})
-      : /*this._ssl = false,*/
-        super(Logger('AuthHandler'));
 
   List<int> getHash() {
     List<int> hash;
@@ -76,9 +79,9 @@ class AuthHandler extends Handler {
   @override
   Buffer createRequest() {
     // calculate the mysql password hash
-    var hash = getHash();
+    final hash = getHash();
 
-    var encodedUsername = username == null ? <int>[] : utf8.encode(username!);
+    final encodedUsername = username == null ? <int>[] : utf8.encode(username!);
     late List<int> encodedDb;
     var encodedAuth = <int>[];
 
@@ -94,7 +97,7 @@ class AuthHandler extends Handler {
       size += encodedAuth.length + 1;
     }
 
-    var buffer = Buffer(size);
+    final buffer = Buffer(size);
     buffer.seekWrite(0);
     buffer.writeUint32(clientFlags);
     buffer.writeUint32(maxPacketSize);

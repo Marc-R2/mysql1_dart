@@ -1,19 +1,37 @@
-library buffered_socket;
-
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+
 import 'package:logging/logging.dart';
-import 'buffer.dart';
+import 'package:mysql1/src/buffer.dart';
 
-typedef ErrorHandler = Function(Object err);
-typedef DoneHandler = Function();
-typedef DataReadyHandler = Function();
-typedef ClosedHandler = Function();
+typedef ErrorHandler = void Function(Object err);
+typedef DoneHandler = void Function();
+typedef DataReadyHandler = void Function();
+typedef ClosedHandler = void Function();
 
-typedef SocketFactory = Function(String host, int port, Duration timeout,
-    {bool isUnixSocket});
+typedef SocketFactory = Future<RawSocket> Function(
+  String host,
+  int port,
+  Duration timeout, {
+  bool isUnixSocket,
+});
 
 class BufferedSocket {
+  BufferedSocket._(
+    this._socket,
+    this.onDataReady,
+    this.onDone,
+    this.onError,
+    this.onClosed,
+  ) : log = Logger('BufferedSocket') {
+    _subscription = _socket.listen(
+      _onData,
+      onError: _onSocketError,
+      onDone: _onSocketDone,
+      cancelOnError: true,
+    );
+  }
+
   final Logger log;
 
   ErrorHandler? onError;
@@ -41,18 +59,7 @@ class BufferedSocket {
 
   bool get closed => _closed;
 
-  BufferedSocket._(
-      this._socket, this.onDataReady, this.onDone, this.onError, this.onClosed)
-      : log = Logger('BufferedSocket') {
-    _subscription = _socket.listen(_onData,
-        onError: _onSocketError, onDone: _onSocketDone, cancelOnError: true);
-  }
-
-  void _onSocketError(Object error) {
-    if (onError != null) {
-      onError!(error);
-    }
-  }
+  void _onSocketError(Object error) => onError?.call(error);
 
   void _onSocketDone() {
     if (onDone != null) {
@@ -62,12 +69,17 @@ class BufferedSocket {
   }
 
   static Future<RawSocket> defaultSocketFactory(
-      String host, int port, Duration timeout,
-      {bool isUnixSocket = false}) {
+    String host,
+    int port,
+    Duration timeout, {
+    bool isUnixSocket = false,
+  }) {
     if (isUnixSocket) {
       return RawSocket.connect(
-          InternetAddress(host, type: InternetAddressType.unix), port,
-          timeout: timeout);
+        InternetAddress(host, type: InternetAddressType.unix),
+        port,
+        timeout: timeout,
+      );
     } else {
       return RawSocket.connect(host, port, timeout: timeout);
     }
@@ -108,9 +120,7 @@ class BufferedSocket {
       }
     } else if (event == RawSocketEvent.readClosed) {
       log.fine('READ_CLOSED');
-      if (onClosed != null) {
-        onClosed!();
-      }
+      onClosed?.call();
     } else if (event == RawSocketEvent.closed) {
       log.fine('CLOSED');
     } else if (event == RawSocketEvent.write) {
@@ -147,7 +157,7 @@ class BufferedSocket {
 
   void _writeBuffer() {
     log.fine('_writeBuffer offset=$_writeOffset');
-    var bytesWritten = _writingBuffer!
+    final bytesWritten = _writingBuffer!
         .writeToSocket(_socket, _writeOffset, _writeLength - _writeOffset);
     log.fine('Wrote $bytesWritten bytes');
     if (log.isLoggable(Level.FINE)) {
@@ -189,7 +199,7 @@ class BufferedSocket {
   }
 
   void _readBuffer() {
-    var bytesRead = _readingBuffer!
+    final bytesRead = _readingBuffer!
         .readFromSocket(_socket, _readingBuffer!.length - _readOffset);
     log.fine('read $bytesRead bytes');
     if (log.isLoggable(Level.FINE)) {
@@ -207,16 +217,24 @@ class BufferedSocket {
     _closed = true;
   }
 
-  Future startSSL() async {
+  Future<void> startSSL() async {
     log.fine('Securing socket');
-    var socket = await RawSecureSocket.secure(_socket,
-        subscription: _subscription, onBadCertificate: (cert) => true);
+    final socket = await RawSecureSocket.secure(
+      _socket,
+      subscription: _subscription,
+      onBadCertificate: (cert) => true,
+    );
     log.fine('Socket is secure');
     _socket = socket;
     _socket.setOption(SocketOption.tcpNoDelay, true);
-    _subscription = _socket.listen(_onData,
-        onError: _onSocketError, onDone: _onSocketDone, cancelOnError: true);
-    _socket.writeEventsEnabled = true;
-    _socket.readEventsEnabled = true;
+    _subscription = _socket.listen(
+      _onData,
+      onError: _onSocketError,
+      onDone: _onSocketDone,
+      cancelOnError: true,
+    );
+    _socket
+      ..writeEventsEnabled = true
+      ..readEventsEnabled = true;
   }
 }

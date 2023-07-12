@@ -1,15 +1,12 @@
-library mysql1.handshake_handler;
-
 import 'dart:math' as math;
 
 import 'package:logging/logging.dart';
-
-import '../buffer.dart';
-import '../handlers/handler.dart';
-import '../mysql_client_error.dart';
-import '../constants.dart';
-import 'ssl_handler.dart';
-import 'auth_handler.dart';
+import 'package:mysql1/src/auth/auth_handler.dart';
+import 'package:mysql1/src/auth/ssl_handler.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/handler.dart';
+import 'package:mysql1/src/mysql_client_error.dart';
 
 enum AuthPlugin {
   none,
@@ -40,6 +37,16 @@ String authPluginToString(AuthPlugin v) {
 }
 
 class HandshakeHandler extends Handler {
+  HandshakeHandler(
+    this._user,
+    this._password,
+    this._maxPacketSize,
+    this._characterSet, [
+    String? db,
+    this.useCompression = false,
+    this.useSSL = false,
+  ])  : _db = db,
+        super(Logger('HandshakeHandler'));
   static const String MYSQL_NATIVE_PASSWORD = 'mysql_native_password';
 
   final String? _user;
@@ -61,14 +68,6 @@ class HandshakeHandler extends Handler {
   bool useCompression = false;
   bool useSSL = false;
 
-  HandshakeHandler(
-      this._user, this._password, this._maxPacketSize, this._characterSet,
-      [String? db, bool useCompression = false, bool useSSL = false])
-      : _db = db,
-        useCompression = useCompression,
-        useSSL = useSSL,
-        super(Logger('HandshakeHandler'));
-
   /// The server initiates the handshake after the client connects,
   /// so a request will never be created.
   @override
@@ -84,13 +83,13 @@ class HandshakeHandler extends Handler {
     }
     serverVersion = response.readNullTerminatedString();
     threadId = response.readUint32();
-    var scrambleBuffer1 = response.readList(8);
+    final scrambleBuffer1 = response.readList(8);
     response.skip(1);
     serverCapabilities = response.readUint16();
     if (response.hasMore) {
       serverLanguage = response.readByte();
       serverStatus = response.readUint16();
-      serverCapabilities += (response.readUint16() << 0x10);
+      serverCapabilities += response.readUint16() << 0x10;
 
       //var secure = serverCapabilities & CLIENT_SECURE_CONNECTION;
       //var plugin = serverCapabilities & CLIENT_PLUGIN_AUTH;
@@ -98,7 +97,7 @@ class HandshakeHandler extends Handler {
       scrambleLength = response.readByte();
       response.skip(10);
       if (serverCapabilities & CLIENT_SECURE_CONNECTION > 0) {
-        var scrambleBuffer2 =
+        final scrambleBuffer2 =
             response.readList(math.max(13, scrambleLength! - 8) - 1);
 
         // read null-terminator
@@ -165,24 +164,35 @@ class HandshakeHandler extends Handler {
 
     if (useSSL) {
       return HandlerResponse(
-          nextHandler: SSLHandler(
-              clientFlags,
-              _maxPacketSize,
-              _characterSet,
-              AuthHandler(
-                _user,
-                _password,
-                _db,
-                scrambleBuffer,
-                clientFlags,
-                _maxPacketSize,
-                _characterSet,
-                _authPlugin,
-              )));
+        nextHandler: SSLHandler(
+          clientFlags,
+          _maxPacketSize,
+          _characterSet,
+          AuthHandler(
+            _user,
+            _password,
+            _db,
+            scrambleBuffer,
+            clientFlags,
+            _maxPacketSize,
+            _characterSet,
+            _authPlugin,
+          ),
+        ),
+      );
     }
 
     return HandlerResponse(
-        nextHandler: AuthHandler(_user, _password, _db, scrambleBuffer,
-            clientFlags, _maxPacketSize, _characterSet, _authPlugin));
+      nextHandler: AuthHandler(
+        _user,
+        _password,
+        _db,
+        scrambleBuffer,
+        clientFlags,
+        _maxPacketSize,
+        _characterSet,
+        _authPlugin,
+      ),
+    );
   }
 }

@@ -1,18 +1,15 @@
-library mysql1.quit_handler;
-
 import 'package:logging/logging.dart';
-
-import '../constants.dart';
-import '../buffer.dart';
-import '../mysql_protocol_error.dart';
-import 'handler.dart';
+import 'package:mysql1/src/buffer.dart';
+import 'package:mysql1/src/constants.dart';
+import 'package:mysql1/src/handlers/handler.dart';
+import 'package:mysql1/src/mysql_protocol_error.dart';
 
 class QuitHandler extends Handler {
   QuitHandler() : super(Logger('QuitHandler'));
 
   @override
   Buffer createRequest() {
-    var buffer = Buffer(1);
+    final buffer = Buffer(1);
     buffer.writeByte(COM_QUIT);
     return buffer;
   }
@@ -20,6 +17,7 @@ class QuitHandler extends Handler {
   @override
   HandlerResponse processResponse(Buffer response) {
     throw createMySqlProtocolError(
-        "Shouldn't have received a response after sending a QUIT message");
+      "Shouldn't have received a response after sending a QUIT message",
+    );
   }
 }

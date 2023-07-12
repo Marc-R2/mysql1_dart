@@ -1,15 +1,16 @@
-library mysql1.test.blob_test;
-
 import 'package:test/test.dart';
 
 import '../test_infrastructure.dart';
 
 void main() {
-  initializeTest('stream', 'create table stream (id integer, name text)',
-      "insert into stream (id, name) values (1, 'A'), (2, 'B'), (3, 'C')");
+  initializeTest(
+    'stream',
+    'create table stream (id integer, name text)',
+    "insert into stream (id, name) values (1, 'A'), (2, 'B'), (3, 'C')",
+  );
 
   test('store data', () async {
-    var values = await conn.queryMulti('select * from stream where id = ?', [
+    final values = await conn.queryMulti('select * from stream where id = ?', [
       [1],
       [2],
       [3]
@@ -42,7 +43,8 @@ void main() {
 
     await conn.transaction((context) async {
       await context.query(
-          "insert into stream (id, name) values (1, 'A'), (2, 'B'), (3, 'C')");
+        "insert into stream (id, name) values (1, 'A'), (2, 'B'), (3, 'C')",
+      );
       context.rollback();
     });
 
@@ -56,7 +58,8 @@ void main() {
 
     await conn.transaction((context) async {
       await context.query(
-          "insert into stream (id, name) values (1, 'A'), (2, 'B'), (3, 'C')");
+        "insert into stream (id, name) values (1, 'A'), (2, 'B'), (3, 'C')",
+      );
     });
 
     count = await conn.query('SELECT COUNT(*) FROM stream');
