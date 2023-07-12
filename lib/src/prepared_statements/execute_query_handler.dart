@@ -28,12 +28,13 @@ class ExecuteQueryHandler extends Handler {
   int _state = STATE_HEADER_PACKET;
 
   List<Field> fieldPackets;
+
 //  Map<Symbol, int> _fieldIndex;
   StreamController<ResultRow>? _streamController;
 
   final PreparedQuery? _preparedQuery;
   final List<Object?> _values;
-  List<dynamic>? preparedValues;
+  List<Object?>? preparedValues;
   late OkPacket _okPacket;
   final bool _executed;
   bool _cancelled = false;
@@ -59,113 +60,55 @@ class ExecuteQueryHandler extends Handler {
   }
 
   Object? prepareValue(Object? value) {
-    if (value == null) {
-      return null;
-    }
-
-    if (value is int) {
-      return _prepareInt(value);
-    }
-    if (value is double) {
-      return _prepareDouble(value);
-    }
-    if (value is DateTime) {
-      return _prepareDateTime(value);
-    }
-    if (value is bool) {
-      return _prepareBool(value);
-    }
-    if (value is List<int>) {
-      return _prepareList(value);
-    }
-    if (value is Blob) {
-      return _prepareBlob(value);
-    }
-    return _prepareString(value);
+    if (value == null) return null;
+    if (value is int) return _prepareInt(value);
+    if (value is double) return _prepareDouble(value);
+    if (value is DateTime) return _prepareDateTime(value);
+    if (value is bool) return _prepareBool(value);
+    if (value is List<int>) return _prepareList(value);
+    if (value is Blob) return _prepareBlob(value);
+    return _prepareString(value.toString());
   }
 
   int measureValue(dynamic value, dynamic preparedValue) {
-    if (value != null) {
-      if (value is int) {
-        return _measureInt(value, preparedValue);
-      } else if (value is double) {
-        return _measureDouble(value, preparedValue);
-      } else if (value is DateTime) {
-        return _measureDateTime(value, preparedValue);
-      } else if (value is bool) {
-        return _measureBool(value, preparedValue);
-      } else if (value is List<int>) {
-        return _measureList(value, preparedValue);
-      } else if (value is Blob) {
-        return _measureBlob(value, preparedValue);
-      } else {
-        return _measureString(value, preparedValue);
-      }
-    }
-    return 0;
+    if (value == null) return 0;
+    if (value is int) return _measureInt(value, preparedValue);
+    if (value is double) return _measureDouble(value, preparedValue);
+    if (value is DateTime) return _measureDateTime(value, preparedValue);
+    if (value is bool) return _measureBool(value, preparedValue);
+    if (value is List<int>) return _measureList(value, preparedValue);
+    if (value is Blob) return _measureBlob(value, preparedValue);
+    return _measureString(value, preparedValue);
   }
 
   int _getType(Object? value) {
-    if (value == null) {
-      return FIELD_TYPE_NULL;
-    }
-    if (value is int) {
-      return FIELD_TYPE_LONGLONG;
-    }
-    if (value is double) {
-      return FIELD_TYPE_VARCHAR;
-    }
-    if (value is DateTime) {
-      return FIELD_TYPE_DATETIME;
-    }
-    if (value is bool) {
-      return FIELD_TYPE_TINY;
-    }
-    if (value is List<int>) {
-      return FIELD_TYPE_BLOB;
-    }
-    if (value is Blob) {
-      return FIELD_TYPE_BLOB;
-    }
+    if (value == null) return FIELD_TYPE_NULL;
+    if (value is int) return FIELD_TYPE_LONGLONG;
+    if (value is double) return FIELD_TYPE_VARCHAR;
+    if (value is DateTime) return FIELD_TYPE_DATETIME;
+    if (value is bool) return FIELD_TYPE_TINY;
+    if (value is List<int>) return FIELD_TYPE_BLOB;
+    if (value is Blob) return FIELD_TYPE_BLOB;
 
     return FIELD_TYPE_VARCHAR;
   }
 
-  void _writeValue(Object? value, preparedValue, Buffer buffer) {
-    if (value != null) {
-      if (value is int) {
-        _writeInt(value, preparedValue, buffer);
-      } else if (value is double) {
-        _writeDouble(value, preparedValue, buffer);
-      } else if (value is DateTime) {
-        _writeDateTime(value, preparedValue, buffer);
-      } else if (value is bool) {
-        _writeBool(value, preparedValue, buffer);
-      } else if (value is List<int>) {
-        _writeList(value, preparedValue, buffer);
-      } else if (value is Blob) {
-        _writeBlob(value, preparedValue, buffer);
-      } else {
-        _writeString(value, preparedValue, buffer);
-      }
-    }
+  void _writeValue(Object? value, Object preparedValue, Buffer buffer) {
+    if (value == null) return;
+    if (value is int) return _writeInt(value, preparedValue, buffer);
+    if (value is double) return _writeDouble(value, preparedValue, buffer);
+    if (value is DateTime) return _writeDateTime(value, preparedValue, buffer);
+    if (value is bool) return _writeBool(value, preparedValue, buffer);
+    if (value is List<int>) return _writeList(value, preparedValue, buffer);
+    if (value is Blob) return _writeBlob(value, preparedValue, buffer);
+    return _writeString(value.toString(), preparedValue, buffer);
   }
 
-  int _prepareInt(int value) {
-    return value;
-  }
+  int _prepareInt(int value) => value;
 
-  int _measureInt(value, preparedValue) {
-    return 8;
-  }
+  int _measureInt(value, preparedValue) => 8;
 
   void _writeInt(int value, preparedValue, Buffer buffer) {
-//          if (value < 128 && value > -127) {
-//            log.fine("TINYINT: value");
-//            types.add(FIELD_TYPE_TINY);
-//            types.add(0);
-//            values.add(value & 0xFF);
-//          } else {
     log.fine('LONG: $value');
     buffer.writeByte(value >> 0x00 & 0xFF);
     buffer.writeByte(value >> 0x08 & 0xFF);
@@ -178,16 +121,14 @@ class ExecuteQueryHandler extends Handler {
 //          }
   }
 
-  List<int> _prepareDouble(double value) {
-    return utf8.encode(value.toString());
-  }
+  List<int> _prepareDouble(double value) => utf8.encode(value.toString());
 
   int _measureDouble(double value, dynamic preparedValue) {
     return Buffer.measureLengthCodedBinary(preparedValue.length) +
         (preparedValue.length as int);
   }
 
-  void _writeDouble(double value, preparedValue, Buffer buffer) {
+  void _writeDouble(double value, dynamic preparedValue, Buffer buffer) {
     log.fine('DOUBLE: $value');
 
     buffer.writeLengthCodedBinary(preparedValue.length);
@@ -201,15 +142,11 @@ class ExecuteQueryHandler extends Handler {
 
   DateTime _prepareDateTime(DateTime value) {
     // The driver requires DateTime values to be in UTC and will always give back a UTC DateTime.
-    if (!value.isUtc) {
-      throw MySqlClientError('DateTime value is not in UTC');
-    }
+    if (!value.isUtc) throw MySqlClientError('DateTime value is not in UTC');
     return value;
   }
 
-  int _measureDateTime(value, preparedValue) {
-    return 8;
-  }
+  int _measureDateTime(value, preparedValue) => 8;
 
   void _writeDateTime(DateTime value, preparedValue, Buffer buffer) {
     // TODO remove Date eventually
@@ -277,16 +214,13 @@ class ExecuteQueryHandler extends Handler {
     var byte = 0;
     var bit = 0;
     for (var i = 0; i < _values.length; i++) {
-      if (_values[i] == null) {
-        nullMap[byte] = nullMap[byte] + (1 << bit);
-      }
+      if (_values[i] == null) nullMap[byte] = nullMap[byte] + (1 << bit);
       bit++;
       if (bit > 7) {
         bit = 0;
         byte++;
       }
     }
-
     return nullMap;
   }
 
@@ -301,7 +235,7 @@ class ExecuteQueryHandler extends Handler {
       buffer.writeByte(1);
       buffer.writeList(types);
       for (var i = 0; i < _values.length; i++) {
-        _writeValue(_values[i], preparedValues![i], buffer);
+        _writeValue(_values[i], preparedValues![i]!, buffer);
       }
     } else {
       buffer.writeByte(0);
